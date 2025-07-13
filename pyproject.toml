@@ -1,0 +1,16 @@
+[project]
+name = "dcbot"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "discord>=2.3.2",
+    "dotenv>=0.9.9",
+    "ffmpeg-python>=0.2.0",
+    "pandas>=2.3.1",
+    "pd>=0.0.4",
+    "pynacl>=1.5.0",
+    "yt-dlp>=2025.6.30",
+    "zomboid-rcon>=1.1.0",
+]
