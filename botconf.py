@@ -10,6 +10,8 @@ class BaseBot(commands.Bot):
     def __init__(self, command_prefix, intents):
         super().__init__(command_prefix=command_prefix, intents=intents)
         self.claim_channels = pd.read_csv(os.getenv("CLAIM_SERVER_LIST"), sep=",", header=None)[0].tolist()
+        self.override_accounts = pd.read_csv(os.getenv("OVERRIDE_ACCOUNTS"), sep=",", header=None)[0].tolist()
+
         print(self.claim_channels)
         self.remove_command('help')
         load_dotenv()
@@ -29,8 +31,9 @@ class BaseBot(commands.Bot):
     async def on_message(self, message : commands.Context):
         if message.author == self.user:
             return
-        if message.channel.id in self.claim_channels:
-            await message.delete()
+        if message.author.id not in self.override_accounts:
+            if message.channel.id in self.claim_channels:
+                await message.delete()
 
 
         await self.process_commands(message)
