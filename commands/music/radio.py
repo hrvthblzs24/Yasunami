@@ -14,7 +14,7 @@ class MusicBot():
         self.bot = bot
         self.voice_clients = {}
         self.ffmpeg_path = os.getenv("FFMPEG_PATH")
-        self.channel = None
+        self.channel : discord.VoiceChannel = None
         load_dotenv()
 
     async def new_song_generator(self):
@@ -29,7 +29,8 @@ class MusicBot():
         msg = await self.bot.get_channel(int(os.getenv("RADIO_TRACKLIST_ID"))).send(
             embed=embeds.CURRENTLY_PLAYING_ON_RADIO(
                 title=self.extract_between_dots(self.music),
-                folder=sub_folder,            )
+                folder=sub_folder,            
+                )
         )
         #await msg.add_reaction("💜")  # Replace with your sticker ID
     
@@ -45,28 +46,19 @@ class MusicBot():
         return s[first_dot + 1:last_dot]
     
     def after_playing(self, error):
-        asyncio.run_coroutine_threadsafe(self.play_music(), self.bot.loop)
+        asyncio.run_coroutine_threadsafe(self.start_radio(), self.bot.loop)
 
     async def start_radio(self):
-        if self.channel:
-            if not self.voice_clients.get(self.channel.id):
-                try: 
-                    await self.channel.connect()
-                except: pass
-                try:
-                    voice_client.stop()
-                except: pass
-            voice_client : discord.VoiceClient = self.channel.guild.voice_client
-            self.voice_clients[self.channel.id] = voice_client
-            self.current_track = await self.new_song_generator()
-            voice_client.play(discord.FFmpegOpusAudio(executable=self.ffmpeg_path, source=self.music_path), after=self.after_playing)
-        else:
-            voice_client = self.voice_clients[self.channel.id]
-            if voice_client.is_playing(): voice_client.stop()
-            await self.new_song_generator()
-            voice_client.play(discord.FFmpegOpusAudio(executable=self.ffmpeg_path, source=self.music_path), after=self.after_playing)
-        await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=self.extract_between_dots(self.music)))
-
+        if not self.channel:  self.channel = self.bot.get_channel(int(os.getenv("RADIO_CHANNEL_ID")))
+        if not self.voice_clients.get(self.channel.id):
+            try: 
+                await self.channel.connect()
+                voice_client : discord.VoiceClient = self.channel.guild.voice_client
+                self.voice_clients[self.channel.id] = voice_client
+                self.current_track = await self.new_song_generator()
+                voice_client.play(discord.FFmpegOpusAudio(executable=self.ffmpeg_path, source=self.music_path), after=self.after_playing)
+                await self.bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name=self.extract_between_dots(self.music)))
+            except: pass
     async def stop_radio(self):
         if self.channel:
             voice_client = self.voice_clients.get(self.channel.id)
