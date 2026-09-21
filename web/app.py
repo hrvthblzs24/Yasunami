@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import parse_qs
 
 from aiohttp import web
+from dotenv import load_dotenv
 
 from core.defaults import TEMPVC, WELCOME_DM, WELCOME_MESSAGE
 from core.paths import ROOT
@@ -26,6 +27,22 @@ COOKIE = "dash_auth"
 
 def _secret() -> str:
     return os.getenv("DASHBOARD_SECRET", "change-me")
+
+
+def dashboard_bind() -> tuple[str, int]:
+    """Read host/port from .env every start so a port change actually applies."""
+    load_dotenv(ROOT / ".env", override=True)
+    host = (os.getenv("DASHBOARD_HOST") or "127.0.0.1").strip().strip("\"'")
+    raw = (os.getenv("DASHBOARD_PORT") or "8080").strip().strip("\"'")
+    try:
+        port = int(raw)
+    except ValueError:
+        log.warning("DASHBOARD_PORT=%r is not a number — using 8080", raw)
+        port = 8080
+    if port < 1 or port > 65535:
+        log.warning("DASHBOARD_PORT=%s is out of range — using 8080", port)
+        port = 8080
+    return host, port
 
 
 def _token() -> str:
@@ -87,13 +104,26 @@ class Dashboard:
         return app
 
     async def start(self) -> None:
-        host = os.getenv("DASHBOARD_HOST", "127.0.0.1")
-        port = int(os.getenv("DASHBOARD_PORT", "8080"))
+        host, port = dashboard_bind()
+        self.host = host
+        self.port = port
         self.runner = web.AppRunner(self.app())
         await self.runner.setup()
         site = web.TCPSite(self.runner, host, port)
-        await site.start()
-        log.info("Dashboard on http://%s:%s", host, port)
+        try:
+            await site.start()
+        except OSError as exc:
+            await self.runner.cleanup()
+            self.runner = None
+            log.error(
+                "Dashboard could not bind http://%s:%s (%s). "
+                "Is that port already used? Close the other program or pick another DASHBOARD_PORT.",
+                host,
+                port,
+                exc,
+            )
+            raise
+        log.info("Yasunami dashboard: http://%s:%s", host, port)
 
     async def stop(self) -> None:
         if self.runner is not None:
@@ -155,6 +185,7 @@ class Dashboard:
         <h1>System</h1>
         <div class="card">
           <p>Logged in as <strong>{_e(user)}</strong> ({_e(user.id if user else "")})</p>
+          <p>Dashboard URL: <code>http://{_e(getattr(self, "host", "127.0.0.1"))}:{_e(getattr(self, "port", 8080))}</code></p>
           <p>Database: <code>{_e(self.db.path)}</code></p>
           <p>Root: <code>{_e(ROOT)}</code></p>
           <p>Loaded cogs:</p>
