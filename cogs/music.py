@@ -27,12 +27,16 @@ def _js_runtimes() -> dict[str, str]:
 
 def _ytdl_opts() -> dict:
     opts: dict = {
-        "format": "bestaudio/best",
+        "format": "bestaudio[protocol^=http]/bestaudio/best",
         "quiet": True,
         "noplaylist": True,
         "default_search": "ytsearch",
         "source_address": "0.0.0.0",
-        "extractor_args": {"youtube": {"player_client": ["android", "ios", "web"]}},
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["tv_downgraded", "mweb", "web_embedded", "android_vr"],
+            }
+        },
     }
     runtimes = _js_runtimes()
     if runtimes:
@@ -149,6 +153,13 @@ class GuildPlayer:
                 log.exception("after() failed")
 
         vc.play(audio, after=after)
+        if await self.cog.db.get_setting(self.guild.id, "music.announce", MUSIC["announce"]):
+            channel = self.guild.system_channel
+            if channel is not None:
+                try:
+                    await channel.send(f"Now playing **{track.title}** — requested by {track.requester}")
+                except discord.HTTPException:
+                    pass
 
     async def _after(self) -> None:
         if self.current:
@@ -191,6 +202,13 @@ class GuildPlayer:
             vc.resume()
             return "Resumed."
         return "Nothing is playing."
+
+    def resume(self) -> str:
+        vc = self.voice()
+        if vc and vc.is_paused():
+            vc.resume()
+            return "Resumed."
+        return "Nothing is paused."
 
     async def stop(self) -> str:
         self.queue.clear()
