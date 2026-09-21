@@ -13,11 +13,7 @@ BEATS = {"rock": "scissors", "paper": "rock", "scissors": "paper"}
 
 
 class RockPaperScissors(commands.Cog):
-    """Example minigame that writes into the shared stats table.
-
-    Copy this file when you add another game: change GAME, then
-    call db.add_stat(guild_id, user_id, GAME, "wins"|"losses"|"plays").
-    """
+    """Example minigame that writes into the shared stats table."""
 
     GAME = "rps"
 
@@ -49,7 +45,7 @@ class RockPaperScissors(commands.Cog):
             result = f"You win — **{you}** beats **{bot_pick}**."
             key = "wins"
         else:
-            result = f"You lose — **{bot_pick}** beats **{you}**."
+            result = f"You lose — **{bot_pick}** beats **{you**."
             key = "losses"
 
         value = await self.db.add_stat(interaction.guild.id, interaction.user.id, self.GAME, key, 1)
