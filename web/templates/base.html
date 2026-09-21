@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{title}} · Bot dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --card: #181b22;
+      --line: #2a2f3a;
+      --text: #e8eaed;
+      --muted: #9aa3b2;
+      --accent: #6d8bff;
+      --ok: #3dd68c;
+      --danger: #ff6b6b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: ui-sans-serif, system-ui, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.45;
+    }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 22px; border-bottom: 1px solid var(--line); background: #12141a;
+    }
+    header a { color: var(--text); text-decoration: none; font-weight: 650; }
+    header nav a { color: var(--muted); margin-left: 16px; font-weight: 500; }
+    main { max-width: 980px; margin: 28px auto; padding: 0 18px 60px; }
+    h1 { font-size: 1.4rem; margin: 0 0 8px; }
+    h2 { font-size: 1.05rem; margin: 28px 0 10px; }
+    p.muted, .muted { color: var(--muted); }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 12px; padding: 16px 18px; margin: 12px 0;
+    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    label { display: block; font-size: 0.82rem; color: var(--muted); margin: 10px 0 4px; }
+    input, textarea, select {
+      width: 100%; background: #10131a; color: var(--text);
+      border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
+    }
+    textarea { min-height: 90px; font-family: inherit; }
+    button, .btn {
+      background: var(--accent); color: #fff; border: 0; border-radius: 8px;
+      padding: 8px 14px; cursor: pointer; font-weight: 600;
+    }
+    button.secondary { background: #2a3142; }
+    .guild {
+      display: flex; justify-content: space-between; align-items: center;
+      text-decoration: none; color: inherit;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
+    .flash { background: #1c2a1f; border: 1px solid #2f5; color: var(--ok); padding: 10px 12px; border-radius: 8px; }
+    .flash.err { background: #2a1717; border-color: var(--danger); color: var(--danger); }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <a href="/">Bot dashboard</a>
+    <nav>
+      <a href="/">Servers</a>
+      <a href="/system">System</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+  <main>
+    {{flash}}
+    {{body}}
+  </main>
+</body>
+</html>

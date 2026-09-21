@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+data/bot.db
+data/bot.db-wal
+data/bot.db-shm
+data/*.tmp
+.idea/
+.vscode/
