@@ -1,1 +1,1 @@
-"""Core helpers for the temp voice bot."""
+"""Yasunami core helpers."""

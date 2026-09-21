@@ -1,1 +1,1 @@
-"""Bot cogs."""
+"""Yasunami cogs."""

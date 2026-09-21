@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Dashboard login</title>
+  <title>Yasunami dashboard</title>
   <style>
     body { font-family: system-ui, sans-serif; background: #0f1115; color: #eee; display: grid; place-items: center; min-height: 100vh; }
     form { background: #181b22; padding: 28px; border-radius: 12px; width: min(360px, 92vw); border: 1px solid #2a2f3a; }
@@ -13,7 +13,7 @@
 </head>
 <body>
   <form method="post" action="/login">
-    <h1>Dashboard</h1>
+    <h1>Yasunami</h1>
     <p>Enter the secret from <code>DASHBOARD_SECRET</code> in <code>.env</code>.</p>
     {{error}}
     <input type="password" name="secret" placeholder="Dashboard secret" autofocus>

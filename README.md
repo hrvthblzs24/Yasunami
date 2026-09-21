@@ -1,21 +1,23 @@
 # Yasunami
 
-Discord slash bot: join-to-create voice rooms, welcome messages, a rules reaction-role, and an SQLite database built to hold minigame stats later.
+All-in-one Discord bot by **MILOX**.
+
+Temp voice rooms, welcome messages, rules reaction-roles, member tracking, a local dashboard, and room for minigames — one process, one SQLite file.
 
 Repo: https://github.com/hrvthblzs24/Yasunami
 
-Everything persistent lives in `data/bot.db`. There is no JSON config store.
-
 ## Features
 
-- Join-to-create lobby to personal voice room named after the user, deleted when empty
-- Owner room controls (`/vc rename`, lock, limit, kick, transfer, claim)
+- Join-to-create lobby → personal voice room named after the user → delete when empty
+- Room owner controls (`/vc rename`, lock, limit, kick, transfer, claim)
 - Welcome message + reactions + optional DM
-- Rules message: react to get the Member role
-- SQLite users / joins / settings / stats
-- Example minigame `/rps` writing into `stats`
-- Local dashboard at http://127.0.0.1:8080
-- Hot reload for cogs
+- Rules message: react to receive the Member role
+- SQLite users, joins, settings, and game stats
+- Example minigame `/rps`
+- Dashboard at http://127.0.0.1:8080
+- Hot-reload when you save a cog
+- Rich presence: `Yasunami | Made by MILOX, with` plus a heart that cycles every second
+  🩷 🧡 🧠 💛 💚 💙 💜 ❤️
 
 ## Setup (Windows)
 
@@ -30,12 +32,26 @@ notepad .env
 python bot.py
 ```
 
-`.env` only needs `DISCORD_TOKEN`. Enable Server Members Intent. Invite with `bot` and `applications.commands`.
+`.env` needs `DISCORD_TOKEN`. Enable **Server Members Intent**. Invite with scopes `bot` and `applications.commands`.
 
 ## First commands
 
 ```
-/rules post channel:#rules role:@Member emoji:\u2705
+/rules post channel:#rules role:@Member emoji:✅
 /welcome setup channel:#welcome
 /tempvc setup
 ```
+
+## Layout
+
+```
+Yasunami/
+├── bot.py
+├── requirements.txt
+├── cogs/
+├── core/
+├── web/
+└── data/bot.db
+```
+
+Persistent data is only `data/bot.db`. Do not commit `.env`.
