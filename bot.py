@@ -9,6 +9,7 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 
 from core.database import Database
+from core.music_bot import start_music_bot
 from core.reloader import HotReloader
 from web.app import start_dashboard
 
@@ -50,6 +51,7 @@ class Yasunami(commands.Bot):
         )
         self.db = Database()
         self.dashboard = None
+        self.music_bot = None
         self._reloader: HotReloader | None = None
         self._heart_index = 0
 
@@ -76,6 +78,15 @@ class Yasunami(commands.Bot):
         for ext in EXTENSIONS:
             await self.load_extension(ext)
             log.info("Loaded %s", ext)
+
+        music_token = (os.getenv("MUSIC_TOKEN") or "").strip()
+        if music_token and music_token != "your_music_bot_token_here":
+            try:
+                self.music_bot = await start_music_bot(music_token)
+            except Exception:
+                log.exception("Music bot failed to start")
+        else:
+            log.warning("MUSIC_TOKEN is not set — /play will not join a voice channel")
 
         if os.getenv("DASHBOARD", "true").lower() in {"1", "true", "yes"}:
             self.dashboard = await start_dashboard(self)
@@ -119,6 +130,8 @@ class Yasunami(commands.Bot):
             self._reloader.stop()
         if self.dashboard is not None:
             await self.dashboard.stop()
+        if self.music_bot is not None:
+            await self.music_bot.close()
         await self.db.close()
         await super().close()
 
