@@ -14,12 +14,28 @@ from core.defaults import MUSIC
 
 log = logging.getLogger("yasunami.music")
 
+def _js_runtimes() -> dict[str, str | None]:
+    import shutil
+
+    found: dict[str, str | None] = {}
+    for name in ("deno", "node", "qjs"):
+        path = shutil.which(name)
+        if path:
+            key = "quickjs" if name == "qjs" else name
+            found[key] = path
+    if not found:
+        found["deno"] = None
+        found["node"] = None
+    return found
+
+
 YTDL_OPTS = {
     "format": "bestaudio/best",
     "quiet": True,
     "noplaylist": True,
     "default_search": "ytsearch",
     "source_address": "0.0.0.0",
+    "js_runtimes": _js_runtimes(),
 }
 
 FFMPEG_OPTS = {
@@ -177,8 +193,6 @@ class GuildPlayer:
 
 
 class Music(commands.Cog):
-    """Play audio from YouTube / search in a voice channel."""
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.db: Database = bot.db
@@ -204,10 +218,7 @@ class Music(commands.Cog):
             return None
         mb = getattr(self.bot, "music_bot", None)
         if mb is None or not mb.is_ready():
-            await ack(
-                interaction,
-                "Music bot is offline. Set MUSIC_TOKEN in .env, invite that bot with Connect + Speak, restart Yasunami.",
-            )
+            await ack(interaction, "Music bot is offline. Set MUSIC_TOKEN and invite that bot with Connect + Speak.")
             return None
         slave = mb.get_guild(interaction.guild.id)
         if slave is None:
@@ -219,10 +230,7 @@ class Music(commands.Cog):
             try:
                 dest = await mb.fetch_channel(channel_id)
             except discord.Forbidden:
-                await ack(
-                    interaction,
-                    "The music bot is missing **View Channel** on that voice channel. Allow View Channel, Connect, and Speak.",
-                )
+                await ack(interaction, "Music bot needs View Channel, Connect, and Speak on that voice channel.")
                 return None
             except discord.NotFound:
                 await ack(interaction, "That voice channel no longer exists.")
@@ -240,7 +248,7 @@ class Music(commands.Cog):
             if isinstance(vc, discord.VoiceClient) and vc.channel != dest:
                 await vc.move_to(dest)
         except discord.Forbidden:
-            await ack(interaction, "The music bot cannot **Connect** or **Speak** there.")
+            await ack(interaction, "The music bot cannot Connect or Speak there.")
             return None
         except discord.ClientException as exc:
             await ack(interaction, f"Music bot could not join: {exc}")
@@ -265,7 +273,11 @@ class Music(commands.Cog):
         try:
             track = await asyncio.to_thread(_extract, query)
         except Exception as exc:
-            await interaction.followup.send(f"Could not load that track. Install ffmpeg + yt-dlp. ({exc})")
+            await interaction.followup.send(
+                "Could not load that track. YouTube needs a JS runtime now. "
+                "Install Deno (irm https://deno.land/install.ps1 | iex), then pip install -U yt-dlp yt-dlp-ejs. "
+                f"({exc})"
+            )
             return
         track.requester = interaction.user.mention
         vol = await self.db.get_setting(interaction.guild.id, "music.volume", MUSIC["volume"])
