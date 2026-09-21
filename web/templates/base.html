@@ -3,68 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{title}} · Bot dashboard</title>
+  <title>{{title}} · Yasunami</title>
   <style>
     :root {
-      --bg: #0f1115;
-      --card: #181b22;
-      --line: #2a2f3a;
-      --text: #e8eaed;
-      --muted: #9aa3b2;
-      --accent: #6d8bff;
-      --ok: #3dd68c;
-      --danger: #ff6b6b;
+      --bg: #f4f1ea;
+      --ink: #161513;
+      --muted: #6f6a62;
+      --line: #ddd6c8;
+      --card: #fffdf8;
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0; font-family: ui-sans-serif, system-ui, sans-serif;
-      background: var(--bg); color: var(--text); line-height: 1.45;
-    }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 22px; border-bottom: 1px solid var(--line); background: #12141a;
-    }
-    header a { color: var(--text); text-decoration: none; font-weight: 650; }
-    header nav a { color: var(--muted); margin-left: 16px; font-weight: 500; }
-    main { max-width: 980px; margin: 28px auto; padding: 0 18px 60px; }
-    h1 { font-size: 1.4rem; margin: 0 0 8px; }
-    h2 { font-size: 1.05rem; margin: 28px 0 10px; }
-    p.muted, .muted { color: var(--muted); }
-    .card {
-      background: var(--card); border: 1px solid var(--line);
-      border-radius: 12px; padding: 16px 18px; margin: 12px 0;
-    }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    label { display: block; font-size: 0.82rem; color: var(--muted); margin: 10px 0 4px; }
-    input, textarea, select {
-      width: 100%; background: #10131a; color: var(--text);
-      border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px;
-    }
-    textarea { min-height: 90px; font-family: inherit; }
-    button, .btn {
-      background: var(--accent); color: #fff; border: 0; border-radius: 8px;
-      padding: 8px 14px; cursor: pointer; font-weight: 600;
-    }
-    button.secondary { background: #2a3142; }
-    .guild {
-      display: flex; justify-content: space-between; align-items: center;
-      text-decoration: none; color: inherit;
-    }
+    body { margin: 0; font-family: "Segoe UI", Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; }
+    header { display: flex; align-items: center; justify-content: space-between; padding: 18px 28px; border-bottom: 1px solid var(--line); background: var(--card); }
+    .brand { font-weight: 650; letter-spacing: -0.03em; text-decoration: none; }
+    nav a { text-decoration: none; color: var(--muted); margin-left: 22px; font-size: 0.92rem; }
+    main { max-width: 1080px; margin: 0 auto; padding: 36px 22px 80px; }
+    h1 { font-size: 1.7rem; letter-spacing: -0.04em; margin: 0 0 6px; }
+    h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+    .lede { color: var(--muted); }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 22px; }
+    .tabs a { text-decoration: none; border: 1px solid var(--line); background: var(--card); padding: 6px 12px; border-radius: 999px; font-size: 0.84rem; color: var(--muted); }
+    .tabs a.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; margin: 0 0 16px; }
+    .guild { display: flex; justify-content: space-between; align-items: center; text-decoration: none; }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin: 12px 0 5px; }
+    input, textarea, select { width: 100%; border: 1px solid var(--line); background: #fff; border-radius: 10px; padding: 9px 11px; font: inherit; }
+    textarea { min-height: 86px; }
+    .check { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+    .check input { width: auto; }
+    button { border: 0; background: var(--ink); color: #fff; border-radius: 999px; padding: 9px 16px; font-weight: 600; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); }
-    .flash { background: #1c2a1f; border: 1px solid #2f5; color: var(--ok); padding: 10px 12px; border-radius: 8px; }
-    .flash.err { background: #2a1717; border-color: var(--danger); color: var(--danger); }
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+    th, td { text-align: left; padding: 8px 4px; border-bottom: 1px solid var(--line); }
+    .flash { background: #eaf6ea; color: #1d5c2a; padding: 10px 12px; border-radius: 10px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
   <header>
-    <a href="/">Bot dashboard</a>
+    <a class="brand" href="/">Yasunami</a>
     <nav>
       <a href="/">Servers</a>
       <a href="/system">System</a>
-      <a href="/logout">Logout</a>
+      <a href="/logout">Leave</a>
     </nav>
   </header>
   <main>

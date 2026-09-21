@@ -2,22 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Yasunami dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yasunami</title>
   <style>
-    body { font-family: system-ui, sans-serif; background: #0f1115; color: #eee; display: grid; place-items: center; min-height: 100vh; }
-    form { background: #181b22; padding: 28px; border-radius: 12px; width: min(360px, 92vw); border: 1px solid #2a2f3a; }
-    input { width: 100%; padding: 10px; margin: 10px 0 16px; background: #10131a; color: #fff; border: 1px solid #2a2f3a; border-radius: 8px; }
-    button { width: 100%; padding: 10px; background: #6d8bff; color: #fff; border: 0; border-radius: 8px; font-weight: 700; }
-    .err { color: #ff6b6b; font-size: 0.9rem; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f1ea; color: #161513; font-family: "Segoe UI", Inter, system-ui, sans-serif; }
+    form { width: min(360px, 92vw); background: #fffdf8; border: 1px solid #ddd6c8; border-radius: 18px; padding: 28px; }
+    h1 { margin: 0 0 8px; letter-spacing: -0.04em; }
+    p { color: #6f6a62; }
+    input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd6c8; margin: 12px 0 16px; font: inherit; }
+    button { width: 100%; border: 0; background: #161513; color: #fff; border-radius: 999px; padding: 10px; font-weight: 650; }
+    .err { color: #9b2c2c; }
   </style>
 </head>
 <body>
   <form method="post" action="/login">
     <h1>Yasunami</h1>
-    <p>Enter the secret from <code>DASHBOARD_SECRET</code> in <code>.env</code>.</p>
+    <p>Dashboard secret from <code>.env</code>.</p>
     {{error}}
-    <input type="password" name="secret" placeholder="Dashboard secret" autofocus>
-    <button type="submit">Open</button>
+    <input type="password" name="secret" placeholder="Secret" autofocus>
+    <button type="submit">Enter</button>
   </form>
 </body>
 </html>
