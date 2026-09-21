@@ -14,29 +14,30 @@ from core.defaults import MUSIC
 
 log = logging.getLogger("yasunami.music")
 
-def _js_runtimes() -> dict[str, str | None]:
+def _js_runtimes() -> dict[str, str]:
     import shutil
 
-    found: dict[str, str | None] = {}
+    found: dict[str, str] = {}
     for name in ("deno", "node", "qjs"):
         path = shutil.which(name)
         if path:
-            key = "quickjs" if name == "qjs" else name
-            found[key] = path
-    if not found:
-        found["deno"] = None
-        found["node"] = None
+            found["quickjs" if name == "qjs" else name] = path
     return found
 
 
-YTDL_OPTS = {
-    "format": "bestaudio/best",
-    "quiet": True,
-    "noplaylist": True,
-    "default_search": "ytsearch",
-    "source_address": "0.0.0.0",
-    "js_runtimes": _js_runtimes(),
-}
+def _ytdl_opts() -> dict:
+    opts: dict = {
+        "format": "bestaudio/best",
+        "quiet": True,
+        "noplaylist": True,
+        "default_search": "ytsearch",
+        "source_address": "0.0.0.0",
+        "extractor_args": {"youtube": {"player_client": ["android", "ios", "web"]}},
+    }
+    runtimes = _js_runtimes()
+    if runtimes:
+        opts["js_runtimes"] = runtimes
+    return opts
 
 FFMPEG_OPTS = {
     "before_options": "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5",
@@ -52,22 +53,45 @@ class Track:
         self.requester = requester
 
 
+def _audio_url(info: dict) -> str | None:
+    direct = info.get("url")
+    if direct and not info.get("formats"):
+        return direct
+    formats = [f for f in (info.get("formats") or []) if isinstance(f, dict) and f.get("url")]
+    audio = [
+        f for f in formats
+        if f.get("acodec") not in {None, "none"} and f.get("vcodec") in {None, "none"}
+    ]
+    pool = audio or formats
+    if not pool:
+        return direct
+    pool.sort(key=lambda f: int(f.get("abr") or f.get("tbr") or 0), reverse=True)
+    return pool[0]["url"]
+
+
 def _extract(query: str) -> Track:
+    import shutil
     import yt_dlp
 
-    with yt_dlp.YoutubeDL(YTDL_OPTS) as ydl:
+    with yt_dlp.YoutubeDL(_ytdl_opts()) as ydl:
         info = ydl.extract_info(query, download=False)
-        if info is None:
+    if not isinstance(info, dict):
+        raise RuntimeError("No result")
+    raw_entries = info.get("entries")
+    if isinstance(raw_entries, list):
+        entries = [e for e in raw_entries if isinstance(e, dict)]
+        if not entries:
             raise RuntimeError("No result")
-        if "entries" in info:
-            entries = [e for e in info["entries"] if e]
-            if not entries:
-                raise RuntimeError("No result")
-            info = entries[0]
-        url = info.get("url") or info.get("webpage_url")
-        title = info.get("title") or query
-        page = info.get("webpage_url") or query
-        return Track(title=title, url=url, webpage=page, requester="")
+        info = entries[0]
+    url = _audio_url(info)
+    if not url:
+        have = [n for n in ("deno", "node") if shutil.which(n)]
+        hint = "none found on PATH" if not have else ", ".join(have)
+        raise RuntimeError(
+            f"No audio URL from YouTube (JS runtimes on PATH: {hint}). "
+            "Install Deno, open a new terminal, restart the bot."
+        )
+    return Track(title=info.get("title") or query, url=url, webpage=info.get("webpage_url") or query, requester="")
 
 
 class GuildPlayer:
@@ -125,13 +149,6 @@ class GuildPlayer:
                 log.exception("after() failed")
 
         vc.play(audio, after=after)
-        if await self.cog.db.get_setting(self.guild.id, "music.announce", MUSIC["announce"]):
-            channel = self.guild.system_channel
-            if channel is not None:
-                try:
-                    await channel.send(f"Now playing **{track.title}** — requested by {track.requester}")
-                except discord.HTTPException:
-                    pass
 
     async def _after(self) -> None:
         if self.current:
@@ -175,13 +192,6 @@ class GuildPlayer:
             return "Resumed."
         return "Nothing is playing."
 
-    def resume(self) -> str:
-        vc = self.voice()
-        if vc and vc.is_paused():
-            vc.resume()
-            return "Resumed."
-        return "Nothing is paused."
-
     async def stop(self) -> str:
         self.queue.clear()
         self.current = None
@@ -218,28 +228,24 @@ class Music(commands.Cog):
             return None
         mb = getattr(self.bot, "music_bot", None)
         if mb is None or not mb.is_ready():
-            await ack(interaction, "Music bot is offline. Set MUSIC_TOKEN and invite that bot with Connect + Speak.")
+            await ack(interaction, "Music bot is offline. Set MUSIC_TOKEN and invite that bot.")
             return None
         slave = mb.get_guild(interaction.guild.id)
         if slave is None:
-            await ack(interaction, "Invite the music bot to this server with Connect and Speak.")
+            await ack(interaction, "Invite the music bot to this server.")
             return None
-        channel_id = member.voice.channel.id
-        dest = slave.get_channel(channel_id)
+        dest = slave.get_channel(member.voice.channel.id)
         if dest is None:
             try:
-                dest = await mb.fetch_channel(channel_id)
+                dest = await mb.fetch_channel(member.voice.channel.id)
             except discord.Forbidden:
-                await ack(interaction, "Music bot needs View Channel, Connect, and Speak on that voice channel.")
+                await ack(interaction, "Music bot needs View Channel, Connect, Speak.")
                 return None
-            except discord.NotFound:
-                await ack(interaction, "That voice channel no longer exists.")
-                return None
-            except discord.HTTPException as exc:
+            except Exception as exc:
                 await ack(interaction, f"Music bot could not load that channel: {exc}")
                 return None
         if dest is None or not hasattr(dest, "connect"):
-            await ack(interaction, "Give the music bot View Channel + Connect + Speak on that channel.")
+            await ack(interaction, "Give the music bot View Channel + Connect + Speak.")
             return None
         vc = slave.voice_client
         try:
@@ -273,11 +279,7 @@ class Music(commands.Cog):
         try:
             track = await asyncio.to_thread(_extract, query)
         except Exception as exc:
-            await interaction.followup.send(
-                "Could not load that track. YouTube needs a JS runtime now. "
-                "Install Deno (irm https://deno.land/install.ps1 | iex), then pip install -U yt-dlp yt-dlp-ejs. "
-                f"({exc})"
-            )
+            await interaction.followup.send(f"Could not load that track. ({exc})")
             return
         track.requester = interaction.user.mention
         vol = await self.db.get_setting(interaction.guild.id, "music.volume", MUSIC["volume"])
