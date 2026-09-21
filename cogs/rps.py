@@ -45,7 +45,7 @@ class RockPaperScissors(commands.Cog):
             result = f"You win — **{you}** beats **{bot_pick}**."
             key = "wins"
         else:
-            result = f"You lose — **{bot_pick}** beats **{you**."
+            result = f"You lose — **{bot_pick}** beats **{you}**."
             key = "losses"
 
         value = await self.db.add_stat(interaction.guild.id, interaction.user.id, self.GAME, key, 1)

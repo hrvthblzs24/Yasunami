@@ -82,7 +82,6 @@ class HotReloader:
                 web_py_changed = True
             elif path.name == "bot.py":
                 bot_py_changed = True
-            # html/css are read from disk per request — no action
 
         if bot_py_changed:
             log.warning("bot.py changed — hot reload cannot apply that. Restart the process.")
@@ -96,8 +95,7 @@ class HotReloader:
                 await self._reload(ext)
         else:
             for ext in dict.fromkeys(cogs_changed):
-                if ext in self.bot.extensions or ext.replace("cogs.", "") :
-                    await self._reload(ext)
+                await self._reload(ext)
 
         if web_py_changed and hasattr(self.bot, "restart_dashboard"):
             try:
