@@ -32,6 +32,9 @@ def _snapshot() -> dict[Path, float]:
     bot_py = ROOT / "bot.py"
     if bot_py.exists():
         out[bot_py] = bot_py.stat().st_mtime
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        out[env_path] = env_path.stat().st_mtime
     return out
 
 
@@ -69,12 +72,15 @@ class HotReloader:
         core_changed = False
         web_py_changed = False
         bot_py_changed = False
+        env_changed = False
 
         for path in changed:
             rel = path.relative_to(ROOT)
             log.info("File changed: %s", rel)
             parts = rel.parts
-            if parts[0] == "cogs" and path.suffix == ".py":
+            if path.name == ".env":
+                env_changed = True
+            elif parts[0] == "cogs" and path.suffix == ".py":
                 cogs_changed.append(f"cogs.{path.stem}")
             elif parts[0] == "core" and path.suffix == ".py":
                 core_changed = True
@@ -97,7 +103,7 @@ class HotReloader:
             for ext in dict.fromkeys(cogs_changed):
                 await self._reload(ext)
 
-        if web_py_changed and hasattr(self.bot, "restart_dashboard"):
+        if (web_py_changed or env_changed) and hasattr(self.bot, "restart_dashboard"):
             try:
                 await self.bot.restart_dashboard()
                 log.info("Dashboard web server reloaded")
