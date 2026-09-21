@@ -34,7 +34,7 @@ def _ytdl_opts() -> dict:
         "source_address": "0.0.0.0",
         "extractor_args": {
             "youtube": {
-                "player_client": ["tv_downgraded", "mweb", "web_embedded", "android_vr"],
+                "player_client": ["tv_downgraded", "web_embedded", "web_creator", "android_vr"],
             }
         },
     }
@@ -62,10 +62,7 @@ def _audio_url(info: dict) -> str | None:
     if direct and not info.get("formats"):
         return direct
     formats = [f for f in (info.get("formats") or []) if isinstance(f, dict) and f.get("url")]
-    audio = [
-        f for f in formats
-        if f.get("acodec") not in {None, "none"} and f.get("vcodec") in {None, "none"}
-    ]
+    audio = [f for f in formats if f.get("acodec") not in {None, "none"} and f.get("vcodec") in {None, "none"}]
     pool = audio or formats
     if not pool:
         return direct
@@ -91,10 +88,7 @@ def _extract(query: str) -> Track:
     if not url:
         have = [n for n in ("deno", "node") if shutil.which(n)]
         hint = "none found on PATH" if not have else ", ".join(have)
-        raise RuntimeError(
-            f"No audio URL from YouTube (JS runtimes on PATH: {hint}). "
-            "Install Deno, open a new terminal, restart the bot."
-        )
+        raise RuntimeError(f"No audio URL from YouTube (JS runtimes on PATH: {hint}). Install Deno and restart.")
     return Track(title=info.get("title") or query, url=url, webpage=info.get("webpage_url") or query, requester="")
 
 
@@ -153,13 +147,6 @@ class GuildPlayer:
                 log.exception("after() failed")
 
         vc.play(audio, after=after)
-        if await self.cog.db.get_setting(self.guild.id, "music.announce", MUSIC["announce"]):
-            channel = self.guild.system_channel
-            if channel is not None:
-                try:
-                    await channel.send(f"Now playing **{track.title}** — requested by {track.requester}")
-                except discord.HTTPException:
-                    pass
 
     async def _after(self) -> None:
         if self.current:
@@ -203,13 +190,6 @@ class GuildPlayer:
             return "Resumed."
         return "Nothing is playing."
 
-    def resume(self) -> str:
-        vc = self.voice()
-        if vc and vc.is_paused():
-            vc.resume()
-            return "Resumed."
-        return "Nothing is paused."
-
     async def stop(self) -> str:
         self.queue.clear()
         self.current = None
@@ -246,7 +226,7 @@ class Music(commands.Cog):
             return None
         mb = getattr(self.bot, "music_bot", None)
         if mb is None or not mb.is_ready():
-            await ack(interaction, "Music bot is offline. Set MUSIC_TOKEN and invite that bot.")
+            await ack(interaction, "Music bot is offline.")
             return None
         slave = mb.get_guild(interaction.guild.id)
         if slave is None:
@@ -256,11 +236,8 @@ class Music(commands.Cog):
         if dest is None:
             try:
                 dest = await mb.fetch_channel(member.voice.channel.id)
-            except discord.Forbidden:
-                await ack(interaction, "Music bot needs View Channel, Connect, Speak.")
-                return None
             except Exception as exc:
-                await ack(interaction, f"Music bot could not load that channel: {exc}")
+                await ack(interaction, f"Music bot could not use that channel: {exc}")
                 return None
         if dest is None or not hasattr(dest, "connect"):
             await ack(interaction, "Give the music bot View Channel + Connect + Speak.")
@@ -271,10 +248,7 @@ class Music(commands.Cog):
                 return await dest.connect()
             if isinstance(vc, discord.VoiceClient) and vc.channel != dest:
                 await vc.move_to(dest)
-        except discord.Forbidden:
-            await ack(interaction, "The music bot cannot Connect or Speak there.")
-            return None
-        except discord.ClientException as exc:
+        except Exception as exc:
             await ack(interaction, f"Music bot could not join: {exc}")
             return None
         return vc if isinstance(vc, discord.VoiceClient) else slave.voice_client
@@ -290,9 +264,8 @@ class Music(commands.Cog):
         if await self._ensure_voice(interaction) is None:
             return
         player = self.player(interaction.guild)
-        limit = int(await self.db.get_setting(interaction.guild.id, "music.max_queue", MUSIC["max_queue"]) or 50)
-        if len(player.queue) >= limit:
-            await interaction.followup.send(f"Queue is full ({limit}).")
+        if len(player.queue) >= int(await self.db.get_setting(interaction.guild.id, "music.max_queue", MUSIC["max_queue"]) or 50):
+            await interaction.followup.send("Queue is full.")
             return
         try:
             track = await asyncio.to_thread(_extract, query)
@@ -349,11 +322,8 @@ class Music(commands.Cog):
         if player.current is None and not player.queue:
             await ack(interaction, "Queue is empty.")
             return
-        lines = []
-        if player.current:
-            lines.append(f"**Now:** {player.current.title}")
-        for i, track in enumerate(player.queue, start=1):
-            lines.append(f"`{i}.` {track.title}")
+        lines = [f"**Now:** {player.current.title}"] if player.current else []
+        lines.extend(f"`{i}.` {track.title}" for i, track in enumerate(player.queue, start=1))
         await ack(interaction, "\n".join(lines) or "Queue is empty.", ephemeral=False)
 
 
