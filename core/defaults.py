@@ -23,6 +23,29 @@ TEMPVC = {
 WELCOME_MESSAGE = "{mention} welcome to **{server}** — you are member #{member_count}."
 WELCOME_DM = "Hey {user}, welcome to {server}!"
 
+MOD = {
+    "ban.enabled": True,
+    "kick.enabled": True,
+    "mute.enabled": True,
+    "deaf.enabled": True,
+    "msg.enabled": True,
+    "mute.minutes": 10,
+    "ban.response": "Banned **{user}**. Reason: {reason}",
+    "kick.response": "Kicked **{user}**. Reason: {reason}",
+    "mute.response": "Muted **{user}** for {minutes} minutes. Reason: {reason}",
+    "unmute.response": "Unmuted **{user}**.",
+    "deaf.response": "Deafened **{user}**. Reason: {reason}",
+    "undeaf.response": "Undeafened **{user}**.",
+    "msg.response": "Sent a message to {target}.",
+}
+
+MUSIC = {
+    "enabled": True,
+    "volume": 80,
+    "announce": True,
+    "max_queue": 50,
+}
+
 RULES_BODY = (
     "By reacting below you agree to follow the server rules and receive the member role.\n\n"
     "1. Be respectful. No harassment, hate, or slurs.\n"
