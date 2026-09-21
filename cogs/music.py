@@ -159,6 +159,13 @@ class GuildPlayer:
             return "Resumed."
         return "Nothing is playing."
 
+    def resume(self) -> str:
+        vc = self.voice()
+        if vc and vc.is_paused():
+            vc.resume()
+            return "Resumed."
+        return "Nothing is paused."
+
     async def stop(self) -> str:
         self.queue.clear()
         self.current = None
@@ -170,6 +177,8 @@ class GuildPlayer:
 
 
 class Music(commands.Cog):
+    """Play audio from YouTube / search in a voice channel."""
+
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.db: Database = bot.db
@@ -204,9 +213,25 @@ class Music(commands.Cog):
         if slave is None:
             await ack(interaction, "Invite the music bot to this server with Connect and Speak.")
             return None
-        dest = slave.get_channel(member.voice.channel.id)
-        if dest is None or not isinstance(dest, discord.VocalGuildChannel):
-            await ack(interaction, "The music bot cannot see that voice channel.")
+        channel_id = member.voice.channel.id
+        dest = slave.get_channel(channel_id)
+        if dest is None:
+            try:
+                dest = await mb.fetch_channel(channel_id)
+            except discord.Forbidden:
+                await ack(
+                    interaction,
+                    "The music bot is missing **View Channel** on that voice channel. Allow View Channel, Connect, and Speak.",
+                )
+                return None
+            except discord.NotFound:
+                await ack(interaction, "That voice channel no longer exists.")
+                return None
+            except discord.HTTPException as exc:
+                await ack(interaction, f"Music bot could not load that channel: {exc}")
+                return None
+        if dest is None or not hasattr(dest, "connect"):
+            await ack(interaction, "Give the music bot View Channel + Connect + Speak on that channel.")
             return None
         vc = slave.voice_client
         try:
@@ -214,10 +239,13 @@ class Music(commands.Cog):
                 return await dest.connect()
             if isinstance(vc, discord.VoiceClient) and vc.channel != dest:
                 await vc.move_to(dest)
+        except discord.Forbidden:
+            await ack(interaction, "The music bot cannot **Connect** or **Speak** there.")
+            return None
         except discord.ClientException as exc:
             await ack(interaction, f"Music bot could not join: {exc}")
             return None
-        return vc if isinstance(vc, discord.VoiceClient) else None
+        return vc if isinstance(vc, discord.VoiceClient) else slave.voice_client
 
     @app_commands.command(name="play", description="Play a song or add it to the queue")
     @app_commands.describe(query="YouTube URL or search")
