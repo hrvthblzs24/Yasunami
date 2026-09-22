@@ -1,0 +1,13 @@
+<h1>System</h1>
+<div class="card">
+  <p>Logged in as <strong>{{user}}</strong> ({{user_id}})</p>
+  <p>Dashboard URL: <code>{{dashboard_url}}</code></p>
+  <p>Database: <code>{{database}}</code></p>
+  <p>Root: <code>{{root}}</code></p>
+  <p>Loaded cogs:</p>
+  <ul>{{extensions}}</ul>
+  <form method="post" action="/system/reload">
+    <button type="submit">Reload all cogs now</button>
+  </form>
+  <p class="muted">Saving a <code>cogs/*.py</code> file also reloads that cog automatically.</p>
+</div>

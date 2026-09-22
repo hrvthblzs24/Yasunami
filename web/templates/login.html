@@ -1,26 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="{{theme}}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Yasunami</title>
-  <style>
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f1ea; color: #161513; font-family: "Segoe UI", Inter, system-ui, sans-serif; }
-    form { width: min(360px, 92vw); background: #fffdf8; border: 1px solid #ddd6c8; border-radius: 18px; padding: 28px; }
-    h1 { margin: 0 0 8px; letter-spacing: -0.04em; }
-    p { color: #6f6a62; }
-    input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #ddd6c8; margin: 12px 0 16px; font: inherit; }
-    button { width: 100%; border: 0; background: #161513; color: #fff; border-radius: 999px; padding: 10px; font-weight: 650; }
-    .err { color: #9b2c2c; }
-  </style>
+  <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <form method="post" action="/login">
-    <h1>Yasunami</h1>
-    <p>Dashboard secret from <code>.env</code>.</p>
-    {{error}}
-    <input type="password" name="secret" placeholder="Secret" autofocus>
-    <button type="submit">Enter</button>
-  </form>
+  <div class="login-wrap">
+    <form class="card" method="post" action="/login">
+      <h1>Yasunami</h1>
+      <p class="muted">Dashboard secret from <code>.env</code>.</p>
+      {{error}}
+      <input type="password" name="secret" placeholder="Secret" autofocus>
+      <p><button type="submit">Enter</button></p>
+    </form>
+  </div>
 </body>
 </html>
