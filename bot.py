@@ -57,10 +57,10 @@ class Yasunami(commands.Bot):
 
     def _presence_activity(self) -> discord.BaseActivity:
         heart = HEARTS[self._heart_index % len(HEARTS)]
-        name = f"Yasunami | Made by MILOX, with {heart}"
+        name = f"Made by ❀𝕞𝕚𝕝𝕠𝕩, with {heart}"
         return discord.CustomActivity(name=name)
 
-    @tasks.loop(seconds=1)
+    @tasks.loop(seconds=10)
     async def rotate_presence(self) -> None:
         self._heart_index = (self._heart_index + 1) % len(HEARTS)
         try:
