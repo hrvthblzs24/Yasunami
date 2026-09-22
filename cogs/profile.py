@@ -4,12 +4,11 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from core.access import require
 from core.database import Database
 
 
 class Profile(commands.Cog):
-    """Look up join history and module stats stored in SQLite."""
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.db: Database = bot.db
@@ -17,6 +16,7 @@ class Profile(commands.Cog):
     @app_commands.command(name="profile", description="Show when a member joined and their stored stats")
     @app_commands.describe(member="Who to look up (defaults to you)")
     @app_commands.guild_only()
+    @require("profile")
     async def profile(self, interaction: discord.Interaction, member: discord.Member | None = None) -> None:
         assert interaction.guild is not None
         target = member or interaction.user
@@ -26,13 +26,8 @@ class Profile(commands.Cog):
         if row is None:
             await interaction.response.send_message("No database row yet for that member.", ephemeral=True)
             return
-
         stats_rows = await self.db.fetchall(
-            """
-            SELECT game, stat_key, value FROM stats
-            WHERE guild_id = ? AND user_id = ?
-            ORDER BY game, stat_key
-            """,
+            "SELECT game, stat_key, value FROM stats WHERE guild_id = ? AND user_id = ? ORDER BY game, stat_key",
             (interaction.guild.id, target.id),
         )
         lines = [
@@ -52,6 +47,7 @@ class Profile(commands.Cog):
     @app_commands.command(name="leaderboard", description="Top scores for a game stat")
     @app_commands.describe(game="Module name, e.g. rps", stat="Stat key, e.g. wins")
     @app_commands.guild_only()
+    @require("profile")
     async def leaderboard(self, interaction: discord.Interaction, game: str, stat: str = "wins") -> None:
         assert interaction.guild is not None
         rows = await self.db.leaderboard(interaction.guild.id, game, stat, 10)

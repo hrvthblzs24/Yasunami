@@ -1,0 +1,90 @@
+<h1>{{name}}</h1>
+<p class="muted">{{guild_id}}</p>
+
+<div class="grid2">
+  <form class="card" method="post" action="/guild/{{guild_id}}/tempvc">
+    <h2>Temp voice</h2>
+    <label class="toggle"><span>Enabled</span><input type="checkbox" name="enabled" {{enabled_checked}}><i></i></label>
+    <label class="toggle"><span>One room per owner</span><input type="checkbox" name="one_room_per_owner" {{one_room_checked}}><i></i></label>
+    <label>Room name template</label>
+    <input name="channel_name" value="{{channel_name}}">
+    <label>User limit (0 = none)</label>
+    <input name="user_limit" type="number" min="0" max="99" value="{{user_limit}}">
+    <label>Bitrate</label>
+    <input name="bitrate" type="number" min="8000" value="{{bitrate}}">
+    <label>Delete delay (seconds)</label>
+    <input name="delete_delay_seconds" type="number" min="0" max="60" value="{{delete_delay_seconds}}">
+    <p><button type="submit">Save voice</button></p>
+  </form>
+
+  <form class="card" method="post" action="/guild/{{guild_id}}/welcome">
+    <h2>Welcome</h2>
+    <label class="toggle"><span>Enabled</span><input type="checkbox" name="enabled" {{welcome_checked}}><i></i></label>
+    <label class="toggle"><span>Send a DM</span><input type="checkbox" name="dm_enabled" {{dm_checked}}><i></i></label>
+    <label>Channel ID</label>
+    <input name="channel_id" value="{{welcome_channel}}">
+    <label>Message template</label>
+    <textarea name="message">{{welcome_message}}</textarea>
+    <label>Welcome reactions</label>
+    <input name="reactions" value="{{reactions}}">
+    <label>DM template</label>
+    <textarea name="dm_message">{{welcome_dm}}</textarea>
+    <p><button type="submit">Save welcome</button></p>
+  </form>
+</div>
+
+<div class="grid2">
+  <form class="card" method="post" action="/guild/{{guild_id}}/music">
+    <h2>Music</h2>
+    <label class="toggle"><span>Enabled</span><input type="checkbox" name="enabled" {{music_checked}}><i></i></label>
+    <label class="toggle"><span>Announce now playing</span><input type="checkbox" name="announce" {{announce_checked}}><i></i></label>
+    <label>Volume (1–150)</label>
+    <input name="volume" type="number" min="1" max="150" value="{{music_volume}}">
+    <label>Max queue</label>
+    <input name="max_queue" type="number" min="1" max="200" value="{{music_queue}}">
+    <p><button type="submit">Save music</button></p>
+  </form>
+
+  <form class="card" method="post" action="/guild/{{guild_id}}/mod">
+    <h2>Moderation</h2>
+    <label class="toggle"><span>/ban</span><input type="checkbox" name="ban_enabled" {{ban_checked}}><i></i></label>
+    <label class="toggle"><span>/kick</span><input type="checkbox" name="kick_enabled" {{kick_checked}}><i></i></label>
+    <label class="toggle"><span>/mute</span><input type="checkbox" name="mute_enabled" {{mute_checked}}><i></i></label>
+    <label class="toggle"><span>/deaf</span><input type="checkbox" name="deaf_enabled" {{deaf_checked}}><i></i></label>
+    <label class="toggle"><span>/msg</span><input type="checkbox" name="msg_enabled" {{msg_checked}}><i></i></label>
+    <label>Default mute minutes</label>
+    <input name="mute_minutes" type="number" min="1" max="10080" value="{{mute_minutes}}">
+    <p><button type="submit">Save moderation</button></p>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Lobbies</h2>
+  <table><tr><th>Lobby channel</th><th>Category</th></tr>{{lobby_rows}}</table>
+  <h2>Live rooms</h2>
+  <table><tr><th>Room</th><th>Owner</th></tr>{{room_rows}}</table>
+  <h2>Rules / reaction roles</h2>
+  <table><tr><th>Message</th><th>Emoji</th><th>Role</th></tr>{{rule_rows}}</table>
+</div>
+
+<div class="card">
+  <h2>Recent joins / leaves</h2>
+  <table><tr><th>User</th><th>Action</th><th>When (UTC)</th></tr>{{event_rows}}</table>
+</div>
+
+<form class="card" method="post" action="/guild/{{guild_id}}/access">
+  <h2>Command access</h2>
+  <p class="muted">Tick roles that may use each command. None ticked = default Discord permission (admins always can).</p>
+  {{access_blocks}}
+  <p><button type="submit">Save access</button></p>
+</form>
+
+<form class="card" method="post" action="/guild/{{guild_id}}/setting">
+  <h2>Raw setting</h2>
+  <p class="muted">Writes any key into <code>guild_settings</code>.</p>
+  <label>Key</label>
+  <input name="key" placeholder="trivia.enabled">
+  <label>Value</label>
+  <input name="value" placeholder="true">
+  <p><button type="submit">Save key</button></p>
+</form>

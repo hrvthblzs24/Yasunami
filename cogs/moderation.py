@@ -6,6 +6,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
+from core.access import require
 from core.checks import ack
 from core.database import Database
 from core.defaults import MOD
@@ -17,8 +18,6 @@ def _label(user: discord.abc.User) -> str:
 
 
 class Moderation(commands.Cog):
-    """Admin moderation slash commands."""
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.db: Database = bot.db
@@ -45,14 +44,8 @@ class Moderation(commands.Cog):
     @app_commands.command(name="ban", description="Ban a member from the server")
     @app_commands.describe(member="Who to ban", reason="Shown in audit log and the reply", delete_days="Delete recent messages, 0–7")
     @app_commands.guild_only()
-    @app_commands.default_permissions(ban_members=True)
-    async def ban(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        reason: str = "No reason provided",
-        delete_days: app_commands.Range[int, 0, 7] = 0,
-    ) -> None:
+    @require("ban")
+    async def ban(self, interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided", delete_days: app_commands.Range[int, 0, 7] = 0) -> None:
         if not await self._enabled(interaction, "ban"):
             return
         guild = interaction.guild
@@ -70,13 +63,8 @@ class Moderation(commands.Cog):
     @app_commands.command(name="kick", description="Kick a member from the server")
     @app_commands.describe(member="Who to kick", reason="Shown in audit log and the reply")
     @app_commands.guild_only()
-    @app_commands.default_permissions(kick_members=True)
-    async def kick(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        reason: str = "No reason provided",
-    ) -> None:
+    @require("kick")
+    async def kick(self, interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided") -> None:
         if not await self._enabled(interaction, "kick"):
             return
         try:
@@ -92,14 +80,8 @@ class Moderation(commands.Cog):
     @app_commands.command(name="mute", description="Timeout a member")
     @app_commands.describe(member="Who to mute", minutes="How long", reason="Shown in the reply")
     @app_commands.guild_only()
-    @app_commands.default_permissions(moderate_members=True)
-    async def mute(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        minutes: app_commands.Range[int, 1, 40320] | None = None,
-        reason: str = "No reason provided",
-    ) -> None:
+    @require("mute")
+    async def mute(self, interaction: discord.Interaction, member: discord.Member, minutes: app_commands.Range[int, 1, 40320] | None = None, reason: str = "No reason provided") -> None:
         if not await self._enabled(interaction, "mute"):
             return
         assert interaction.guild is not None
@@ -114,18 +96,12 @@ class Moderation(commands.Cog):
         except discord.HTTPException as exc:
             await ack(interaction, f"Mute failed: {exc}")
             return
-        await self._reply(
-            interaction,
-            "mute.response",
-            user=_label(member),
-            reason=reason,
-            minutes=minutes,
-        )
+        await self._reply(interaction, "mute.response", user=_label(member), reason=reason, minutes=minutes)
 
     @app_commands.command(name="unmute", description="Remove a member timeout")
     @app_commands.describe(member="Who to unmute")
     @app_commands.guild_only()
-    @app_commands.default_permissions(moderate_members=True)
+    @require("mute")
     async def unmute(self, interaction: discord.Interaction, member: discord.Member) -> None:
         if not await self._enabled(interaction, "mute"):
             return
@@ -142,13 +118,8 @@ class Moderation(commands.Cog):
     @app_commands.command(name="deaf", description="Server-deafen a member in voice")
     @app_commands.describe(member="Who to deafen", reason="Shown in the reply")
     @app_commands.guild_only()
-    @app_commands.default_permissions(deafen_members=True)
-    async def deaf(
-        self,
-        interaction: discord.Interaction,
-        member: discord.Member,
-        reason: str = "No reason provided",
-    ) -> None:
+    @require("deaf")
+    async def deaf(self, interaction: discord.Interaction, member: discord.Member, reason: str = "No reason provided") -> None:
         if not await self._enabled(interaction, "deaf"):
             return
         if member.voice is None:
@@ -167,7 +138,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="undeaf", description="Remove server deafen")
     @app_commands.describe(member="Who to undeafen")
     @app_commands.guild_only()
-    @app_commands.default_permissions(deafen_members=True)
+    @require("deaf")
     async def undeaf(self, interaction: discord.Interaction, member: discord.Member) -> None:
         if not await self._enabled(interaction, "deaf"):
             return
@@ -184,14 +155,8 @@ class Moderation(commands.Cog):
     @app_commands.command(name="msg", description="Send a message as Yasunami")
     @app_commands.describe(text="What to send", channel="Text channel (omit to use this one)", user="DM this user instead")
     @app_commands.guild_only()
-    @app_commands.default_permissions(manage_messages=True)
-    async def msg(
-        self,
-        interaction: discord.Interaction,
-        text: str,
-        channel: discord.TextChannel | None = None,
-        user: discord.User | None = None,
-    ) -> None:
+    @require("msg")
+    async def msg(self, interaction: discord.Interaction, text: str, channel: discord.TextChannel | None = None, user: discord.User | None = None) -> None:
         if not await self._enabled(interaction, "msg"):
             return
         try:
