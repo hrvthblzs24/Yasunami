@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{title}} · Yasunami</title>
   <link rel="stylesheet" href="/static/app.css">
+  <script>
+    (function () {
+      var allowed = ["sand", "ink", "ocean", "sakura", "matcha", "violet"];
+      var current = document.documentElement.getAttribute("data-theme") || "ink";
+      try {
+        var saved = localStorage.getItem("yasunami-theme");
+        if (saved && allowed.indexOf(saved) !== -1) current = saved;
+      } catch (e) {}
+      if (allowed.indexOf(current) === -1) current = "ink";
+      document.documentElement.setAttribute("data-theme", current);
+    })();
+  </script>
 </head>
 <body>
   <header>
@@ -12,13 +24,13 @@
     <div class="nav">
       <a href="/">Servers</a>
       <a href="/system">System</a>
-      <span class="themes">
-        <a class="theme-btn t-sand" href="/theme/sand" title="Sand"></a>
-        <a class="theme-btn t-ink" href="/theme/ink" title="Ink"></a>
-        <a class="theme-btn t-ocean" href="/theme/ocean" title="Ocean"></a>
-        <a class="theme-btn t-sakura" href="/theme/sakura" title="Sakura"></a>
-        <a class="theme-btn t-matcha" href="/theme/matcha" title="Matcha"></a>
-        <a class="theme-btn t-violet" href="/theme/violet" title="Violet"></a>
+      <span class="themes" id="theme-switch">
+        <button type="button" class="theme-btn t-sand" data-theme-set="sand" title="Sand"></button>
+        <button type="button" class="theme-btn t-ink" data-theme-set="ink" title="Ink"></button>
+        <button type="button" class="theme-btn t-ocean" data-theme-set="ocean" title="Ocean"></button>
+        <button type="button" class="theme-btn t-sakura" data-theme-set="sakura" title="Sakura"></button>
+        <button type="button" class="theme-btn t-matcha" data-theme-set="matcha" title="Matcha"></button>
+        <button type="button" class="theme-btn t-violet" data-theme-set="violet" title="Violet"></button>
       </span>
       <a href="/logout">Leave</a>
     </div>
@@ -27,5 +39,26 @@
     {{flash}}
     {{body}}
   </main>
+  <script>
+    (function () {
+      var allowed = ["sand", "ink", "ocean", "sakura", "matcha", "violet"];
+      function apply(name) {
+        if (allowed.indexOf(name) === -1) name = "ink";
+        document.documentElement.setAttribute("data-theme", name);
+        try { localStorage.setItem("yasunami-theme", name); } catch (e) {}
+        document.cookie = "dash_theme=" + name + "; Path=/; Max-Age=31536000; SameSite=Lax";
+        document.querySelectorAll("[data-theme-set]").forEach(function (btn) {
+          btn.setAttribute("aria-pressed", btn.getAttribute("data-theme-set") === name ? "true" : "false");
+        });
+      }
+      document.querySelectorAll("[data-theme-set]").forEach(function (btn) {
+        btn.addEventListener("click", function (ev) {
+          ev.preventDefault();
+          apply(btn.getAttribute("data-theme-set"));
+        });
+      });
+      apply(document.documentElement.getAttribute("data-theme") || "ink");
+    })();
+  </script>
 </body>
 </html>

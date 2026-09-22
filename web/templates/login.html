@@ -5,6 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Yasunami</title>
   <link rel="stylesheet" href="/static/app.css">
+  <script>
+    (function () {
+      var allowed = ["sand", "ink", "ocean", "sakura", "matcha", "violet"];
+      var current = "ink";
+      try {
+        var saved = localStorage.getItem("yasunami-theme");
+        if (saved && allowed.indexOf(saved) !== -1) current = saved;
+      } catch (e) {}
+      document.documentElement.setAttribute("data-theme", current);
+    })();
+  </script>
 </head>
 <body>
   <div class="login-wrap">
