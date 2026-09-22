@@ -4,15 +4,14 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from core.checks import ack, is_admin
+from core.access import require
+from core.checks import ack
 from core.database import Database
 from core.defaults import TEMPVC
 from core.utils import bot_has_voice_setup_perms, format_room_name, owner_overwrite
 
 
 class VoiceCommands(commands.Cog):
-    """Slash commands for temp voice setup and room controls."""
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.db: Database = bot.db
@@ -41,27 +40,20 @@ class VoiceCommands(commands.Cog):
     setup_group = app_commands.Group(
         name="tempvc",
         description="Configure join-to-create voice channels",
-        default_permissions=discord.Permissions(manage_guild=True),
+        default_permissions=None,
         guild_only=True,
     )
 
     @setup_group.command(name="setup", description="Create a Voice Rooms category + Join to Create lobby")
     @app_commands.describe(category_name="Category name", lobby_name="Lobby voice channel name")
-    @is_admin()
-    async def tempvc_setup(
-        self,
-        interaction: discord.Interaction,
-        category_name: str | None = None,
-        lobby_name: str | None = None,
-    ) -> None:
+    @require("tempvc")
+    async def tempvc_setup(self, interaction: discord.Interaction, category_name: str | None = None, lobby_name: str | None = None) -> None:
         guild = interaction.guild
         assert guild is not None
         cfg = await self.db.tempvc_config(guild.id)
         category_name = category_name or cfg.get("category_name") or TEMPVC["category_name"]
         lobby_name = lobby_name or cfg.get("lobby_name") or TEMPVC["lobby_name"]
-
         await interaction.response.defer(ephemeral=True)
-
         category = discord.utils.get(guild.categories, name=category_name)
         if category is None:
             try:
@@ -69,41 +61,25 @@ class VoiceCommands(commands.Cog):
             except discord.Forbidden:
                 await interaction.followup.send("I need **Manage Channels** to create the category.", ephemeral=True)
                 return
-
         missing = bot_has_voice_setup_perms(guild, category)
         if missing:
-            await interaction.followup.send(
-                "I'm missing these permissions in that category: " + ", ".join(f"`{m}`" for m in missing),
-                ephemeral=True,
-            )
+            await interaction.followup.send("I'm missing these permissions in that category: " + ", ".join(f"`{m}`" for m in missing), ephemeral=True)
             return
-
         try:
-            lobby = await category.create_voice_channel(
-                lobby_name,
-                user_limit=int(cfg.get("lobby_user_limit") or 1),
-                reason="TempVC lobby",
-            )
+            lobby = await category.create_voice_channel(lobby_name, user_limit=int(cfg.get("lobby_user_limit") or 1), reason="TempVC lobby")
         except discord.Forbidden:
             await interaction.followup.send("I need **Manage Channels** to create the lobby.", ephemeral=True)
             return
-
         await self.db.add_lobby(guild.id, lobby.id, category.id)
         await self.db.set_tempvc(guild.id, enabled=True)
         await interaction.followup.send(
-            f"Ready.\nCategory: {category.mention}\nLobby: {lobby.mention}\n"
-            "Anyone who joins the lobby gets their own room in that category.",
+            f"Ready.\nCategory: {category.mention}\nLobby: {lobby.mention}\nAnyone who joins the lobby gets their own room in that category.",
             ephemeral=True,
         )
 
     @setup_group.command(name="bind", description="Use an existing voice channel as the join-to-create lobby")
-    @is_admin()
-    async def tempvc_bind(
-        self,
-        interaction: discord.Interaction,
-        lobby: discord.VoiceChannel,
-        category: discord.CategoryChannel | None = None,
-    ) -> None:
+    @require("tempvc")
+    async def tempvc_bind(self, interaction: discord.Interaction, lobby: discord.VoiceChannel, category: discord.CategoryChannel | None = None) -> None:
         guild = interaction.guild
         assert guild is not None
         category = category or lobby.category
@@ -119,14 +95,14 @@ class VoiceCommands(commands.Cog):
         await ack(interaction, f"Bound lobby {lobby.mention} → rooms in **{category.name}**.")
 
     @setup_group.command(name="unbind", description="Stop using a voice channel as a join-to-create lobby")
-    @is_admin()
+    @require("tempvc")
     async def tempvc_unbind(self, interaction: discord.Interaction, lobby: discord.VoiceChannel) -> None:
         assert interaction.guild is not None
         ok = await self.db.remove_lobby(interaction.guild.id, lobby.id)
         await ack(interaction, "Unbound." if ok else "That channel is not a lobby.")
 
     @setup_group.command(name="config", description="Change how personal rooms are created")
-    @is_admin()
+    @require("tempvc")
     async def tempvc_config(
         self,
         interaction: discord.Interaction,
@@ -162,31 +138,22 @@ class VoiceCommands(commands.Cog):
             for entry in lobbies:
                 ch = interaction.guild.get_channel(int(entry["lobby_id"]))
                 cat = interaction.guild.get_channel(int(entry["category_id"]))
-                lines.append(
-                    f"- {ch.mention if ch else entry['lobby_id']} → {cat.name if cat else entry['category_id']}"
-                )
+                lines.append(f"- {ch.mention if ch else entry['lobby_id']} → {cat.name if cat else entry['category_id']}")
             await ack(interaction, "\n".join(lines))
             return
-
         await self.db.set_tempvc(interaction.guild.id, **updates)
         await ack(interaction, "Updated. Use `/tempvc config` with no options to review.")
 
     @setup_group.command(name="status", description="Show temp voice status for this server")
+    @require("tempvc")
     async def tempvc_status(self, interaction: discord.Interaction) -> None:
         assert interaction.guild is not None
         cfg = await self.db.tempvc_config(interaction.guild.id)
         rooms = await self.db.rooms(interaction.guild.id)
         lobbies = await self.db.lobbies(interaction.guild.id)
-        await ack(
-            interaction,
-            f"{'On' if cfg['enabled'] else 'Off'} · {len(lobbies)} lobby(s) · {len(rooms)} live room(s)",
-        )
+        await ack(interaction, f"{'On' if cfg['enabled'] else 'Off'} · {len(lobbies)} lobby(s) · {len(rooms)} live room(s)")
 
-    vc = app_commands.Group(
-        name="vc",
-        description="Control the temporary voice room you are in",
-        guild_only=True,
-    )
+    vc = app_commands.Group(name="vc", description="Control the temporary voice room you are in", guild_only=True)
 
     @vc.command(name="rename", description="Rename your temporary voice room")
     async def vc_rename(self, interaction: discord.Interaction, name: str) -> None:
@@ -270,11 +237,7 @@ class VoiceCommands(commands.Cog):
         try:
             if owner is not None:
                 await channel.set_permissions(owner, overwrite=None, reason="Ownership transferred")
-            await channel.set_permissions(
-                interaction.user,
-                overwrite=owner_overwrite(interaction.user, cfg.get("owner_permissions") or []),
-                reason="Ownership claimed",
-            )
+            await channel.set_permissions(interaction.user, overwrite=owner_overwrite(interaction.user, cfg.get("owner_permissions") or []), reason="Ownership claimed")
         except discord.HTTPException as exc:
             await ack(interaction, f"Could not claim: {exc}")
             return
@@ -298,11 +261,7 @@ class VoiceCommands(commands.Cog):
         cfg = await self.db.tempvc_config(interaction.guild.id)
         try:
             await channel.set_permissions(interaction.user, overwrite=None, reason="Ownership transferred")
-            await channel.set_permissions(
-                member,
-                overwrite=owner_overwrite(member, cfg.get("owner_permissions") or []),
-                reason="Ownership transferred",
-            )
+            await channel.set_permissions(member, overwrite=owner_overwrite(member, cfg.get("owner_permissions") or []), reason="Ownership transferred")
         except discord.HTTPException as exc:
             await ack(interaction, f"Could not transfer: {exc}")
             return
