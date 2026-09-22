@@ -54,12 +54,12 @@ def _authed(request: web.Request) -> bool:
     return request.cookies.get(COOKIE) == _token()
 
 
-def _read(name: str) -> str:
-    return (TEMPLATES / name).read_text(encoding="utf-8")
+def _read(template: str) -> str:
+    return (TEMPLATES / template).read_text(encoding="utf-8")
 
 
-def _render(name: str, *, raw: dict[str, str] | None = None, **values: Any) -> str:
-    text = _read(name)
+def _render(template: str, *, raw: dict[str, str] | None = None, **values: Any) -> str:
+    text = _read(template)
     for key, value in values.items():
         text = text.replace("{{" + key + "}}", html.escape("" if value is None else str(value)))
     for key, value in (raw or {}).items():
